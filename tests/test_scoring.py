@@ -20,6 +20,17 @@ def test_batch_max_normalization_makes_relevance_dominant():
     assert abs(top["final_score"] - other["final_score"]) - 0.375 < 1e-9
 
 
+def test_score_key_is_accepted_as_relevance_alias():
+    cands = [
+        {"talk": {"id": "A", "start": "11:00"}, "score": 20.0},
+        {"talk": {"id": "B", "start": "12:00"}, "score": 10.0},
+    ]
+
+    ranked = rank_candidates(cands)
+
+    assert [candidate["relevance_score"] for candidate in ranked] == [20.0, 10.0]
+
+
 def test_new_speaker_scores_as_average_not_zero():
     """rating_count == 0 => adjusted rating is the prior (4.0) and the
     DEFAULT_FILL_RATE applies — new reads as average, never last."""

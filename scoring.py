@@ -73,11 +73,14 @@ def rank_candidates(candidates: list[dict]) -> list[dict]:
     relevance_score, speaker_score, final_score, adjusted_rating,
     is_new_speaker — so the why-line is never a single bare total.
     """
-    max_relevance = max((c.get("relevance", 0.0) for c in candidates), default=0.0)
+    def _relevance(c: dict) -> float:
+        return float(c.get("relevance", c.get("score")) or 0.0)
+
+    max_relevance = max((_relevance(c) for c in candidates), default=0.0)
     ranked = []
     for candidate in candidates:
         talk = candidate["talk"]
-        relevance = float(candidate.get("relevance") or 0.0)
+        relevance = _relevance(candidate)
         speaker_score, adjusted_rating = compute_speaker_score(talk)
         relevance_normalized = (
             _clamp(relevance / max_relevance) if max_relevance > 0 else 0.0
