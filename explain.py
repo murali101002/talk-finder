@@ -164,9 +164,9 @@ def attach_lines(picks: list[dict], topics: list[str]) -> list[dict]:
         matched = [t for t in pick.get("topics", []) if t in {x.lower().strip() for x in topics}]
         template = fallback_why(pick, matched, topics_given)
         llm_line = llm.get(pick["id"], "")
-        # a full room must always say so — template wins if the LLM dropped it
-        if pick["fill"] >= pick["capacity"] and "full" not in llm_line.lower():
-            pick["why_line"] = template
+        if pick["fill"] >= pick["capacity"]:
+            full_note = f"{pick['room']} is full, so an alternative follows."
+            pick["why_line"] = f"{llm_line} {full_note}" if llm_line else template
         else:
             pick["why_line"] = llm_line or template
     return picks
