@@ -2,12 +2,13 @@
 
 import logging
 import os
-from fastapi import FastAPI, HTTPException
 from functools import lru_cache
 
-from telemetry import setup_otel
-from elasticsearch import Elasticsearch
 from dotenv import load_dotenv
+from elasticsearch import Elasticsearch
+from fastapi import FastAPI, HTTPException
+
+from telemetry import setup_otel
 
 logger = logging.getLogger("talkfinder.main")
 

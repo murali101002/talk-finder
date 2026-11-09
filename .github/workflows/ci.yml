@@ -1,6 +1,4 @@
-# TalkFinder CI — hermetic by construction: no Elasticsearch service, no
-# secrets. The pure modules (scoring, builder, explain) plus boundary-model
-# tests must pass with zero infrastructure.
+
 name: CI
 
 on:
@@ -18,6 +16,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+
+      - name: Compile check
+        run: uv run python -m compileall -q main.py telemetry.py
+
+      - name: Lint
+        run: uvx ruff check .
+
+      - name: Lockfile is in sync
+        run: uv lock --check
+
+      - name: Compose file is valid
+        run: docker compose config --quiet
+
   test:
     runs-on: ubuntu-latest
     steps:

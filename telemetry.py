@@ -76,7 +76,7 @@ def _signal_url(endpoint: str, signal: str) -> str | None:
     """
     url = endpoint.rstrip("/")
     wanted = SIGNAL_PATHS[signal]
-    for other_signal, other_path in SIGNAL_PATHS.items():
+    for other_path in SIGNAL_PATHS.values():
         if url.endswith(other_path):
             if other_path == wanted:
                 return url
@@ -129,10 +129,14 @@ def setup_otel(app) -> None:
     spans_url = endpoint if protocol == "grpc" else _signal_url(endpoint, "spans")
     if spans_url is not None:
         if protocol == "grpc":
-            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+                OTLPSpanExporter,
+            )
             spans_exporter = OTLPSpanExporter(endpoint=spans_url, headers=headers)
         else:
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+            from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+                OTLPSpanExporter,
+            )
             spans_exporter = OTLPSpanExporter(endpoint=spans_url, headers=headers)
         provider = TracerProvider(resource=resource)
         provider.add_span_processor(BatchSpanProcessor(spans_exporter))
@@ -159,7 +163,7 @@ def _setup_log_export(endpoint: str, protocol: str, headers: dict,
     a request carry that request's trace_id, so in the backend's Logs view
     an ES/LLM line joins the very trace that produced it.
     """
-    from opentelemetry.sdk._logs import LoggingHandler, LoggerProvider
+    from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
     from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 
     if protocol == "grpc":

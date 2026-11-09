@@ -6,8 +6,9 @@
 
 import logging
 
-import telemetry
 import opentelemetry.trace as otel_trace
+
+import telemetry
 
 
 def test_headers_parse_both_documented_forms():
