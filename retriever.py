@@ -1,0 +1,141 @@
+"""Step 1 — Elasticsearch access layer.
+
+Every ES read lives here; routes never touch the ES client directly.
+Current target: local ES 9.5.5 (checked, not guessed) on ES_URL from .env.
+"""
+
+import logging
+import os
+
+from dotenv import load_dotenv
+from elasticsearch import Elasticsearch
+from fastapi import HTTPException
+
+logger = logging.getLogger("talkfinder.retriever")
+
+load_dotenv()
+
+ES_URL = os.getenv("ES_URL", "http://localhost:9200")
+INDEX = "talks"
+# MUST be the same model load_seed.py used for the corpus, or the knn
+# halves live in different spaces. Set EMBEDDING_MODEL in .env for both.
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+
+client = Elasticsearch(ES_URL)
+
+
+def embed_query(text: str) -> list[float] | None:
+    """Query embedding at request time, same model as the indexed corpus.
+
+    Returns None when OPENAI_API_KEY is unset (cold-start / no key yet):
+    callers then skip the knn half instead of failing the request.
+    Dims come from the model's default — no number hardcoded here.
+    """
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        logger.info("api_key not found!!!")
+        return None
+    from openai import OpenAI
+
+    logger.debug("api_key present.")
+    resp = OpenAI(api_key=api_key).embeddings.create(
+        model=EMBEDDING_MODEL,
+        input=text,
+    )
+    return [float(x) for x in resp.data[0].embedding]
+
+
+def ensure_index() -> None:
+    if not client.indices.exists(index=INDEX):
+        raise HTTPException(
+            status_code=503,
+            detail="Index 'talks' not found — run load_seed.py first.",
+        )
+
+
+def search_talks() -> list[dict]:
+    """All talks, sorted by start time then room (used by GET /talks)."""
+    ensure_index()
+    resp = client.search(index=INDEX, query={"match_all": {}}, size=100)
+    found = [hit["_source"] for hit in resp["hits"]["hits"]]
+    logger.info("ES match_all: %d talks returned (%s)", len(found),
+                ", ".join(t["id"] for t in found) or "none")
+    return sorted(found, key=lambda talk: (talk["start"], talk["room"]))
+
+
+def distinct_topics() -> list[str]:
+    """Distinct topic keywords across the corpus, alphabetical.
+
+    Backs GET /topics — the frontend's topic multi-select must offer exactly
+    what the corpus actually contains, not a hardcoded list.
+    """
+    ensure_index()
+    resp = client.search(
+        index=INDEX,
+        size=0,
+        aggs={"topics": {"terms": {"field": "topics", "size": 50}}},
+    )
+    buckets = resp["aggregations"]["topics"]["buckets"]
+    return sorted(bucket["key"] for bucket in buckets)
+
+
+def search_candidates(text: str, size: int = 20) -> list[dict]:
+    """Step 1 of /agenda: ranked hybrid-search candidates for an interest string.
+
+    Returns [{"talk": <source doc>, "score": <float>}, ...], strongest first.
+    ~size candidates on purpose — the builder needs to SEE overlaps to resolve
+    them, not just the top 5.
+
+    Hybrid: multi_match (BM25, exact keyword recall) + knn (semantic recall
+    via the query embedding). ES fuses both hit lists into one _score.
+    Without OPENAI_API_KEY the knn half is skipped and ranking is BM25 only.
+    """
+    ensure_index()
+    vector = embed_query(text)
+    if vector is None:
+        return _search_bm25_only(text, size)
+
+    resp = client.search(
+        index=INDEX,
+        size=size,
+        query={
+            "multi_match": {
+                "query": text,
+                "fields": ["title^2", "abstract", "speaker", "topics"],
+            }
+        },
+        knn={
+            "field": "embedding",
+            "query_vector": vector,
+            "k": min(10, size),
+            "num_candidates": 50,
+        },
+    )
+    hits = [
+        {"talk": hit["_source"], "score": hit.get("_score", 0.0)}
+        for hit in resp["hits"]["hits"]
+    ]
+    logger.info("ES hybrid: %d hits for %r (%s)", len(hits), text,
+                ", ".join(f"{h['talk']['id']}:{h['score']:.2f}" for h in hits) or "none")
+    return hits
+
+
+def _search_bm25_only(text: str, size: int) -> list[dict]:
+    """Fallback when no OPENAI_API_KEY is set: multi_match only."""
+    resp = client.search(
+        index=INDEX,
+        size=size,
+        query={
+            "multi_match": {
+                "query": text,
+                "fields": ["title^2", "abstract", "speaker", "topics"],
+            }
+        },
+    )
+    hits = [
+        {"talk": hit["_source"], "score": hit.get("_score", 0.0)}
+        for hit in resp["hits"]["hits"]
+    ]
+    logger.info("ES bm25-only (no key): %d hits for %r (%s)", len(hits), text,
+                ", ".join(f"{h['talk']['id']}:{h['score']:.2f}" for h in hits) or "none")
+    return hits
