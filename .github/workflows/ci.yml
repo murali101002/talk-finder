@@ -1,0 +1,32 @@
+# TalkFinder CI — hermetic by construction: no Elasticsearch service, no
+# secrets. The pure modules (scoring, builder, explain) plus boundary-model
+# tests must pass with zero infrastructure.
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch: # manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.14"
+
+      - run: uv sync
+
+      - run: uv run pytest -q
