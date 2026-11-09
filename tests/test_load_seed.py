@@ -6,10 +6,11 @@ each broken talk must produce a loud one-line reason before we ever index.
 """
 
 import json
+from pathlib import Path
 
 from load_seed import validate_talk
 
-TALKS = json.load(open("seed.json"))["talks"]
+TALKS = json.loads(Path("seed.json").read_text())["talks"]
 
 
 def test_whole_seed_validates_clean():
