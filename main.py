@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 from fastapi import FastAPI, HTTPException
 
-from routers import talks
+from routers import agenda, talks
 from telemetry import setup_otel
 
 logger = logging.getLogger("talkfinder.main")
@@ -18,6 +18,7 @@ app = FastAPI(title="TalkFinder", description="Agenda finder for conference atte
 load_dotenv()
 
 app.include_router(talks.router)
+app.include_router(agenda.router)
 
 @lru_cache(maxsize=1)
 def _build_es(es_url: str) -> Elasticsearch:

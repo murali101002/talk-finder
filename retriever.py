@@ -44,6 +44,33 @@ def ensure_index() -> None:
         )
 
 
+# accessibility tag -> does this talk's room actually satisfy it?
+# Missing/zero values fail the need conservatively (never silently pass).
+_ACCESS_CHECKS = {
+    "step_free": lambda talk: bool(talk.get("step_free")),
+    "wheelchair": lambda talk: int(talk.get("wheelchair_spaces") or 0) > 0,
+    "hearing_loop": lambda talk: bool(talk.get("hearing_loop")),
+    "captions": lambda talk: bool(talk.get("captions")),
+    "sign_language": lambda talk: bool(talk.get("sign_language")),
+}
+
+
+def _meets_access(talk: dict, needs: set[str]) -> bool:
+    """True when every requested accommodation holds for this talk.
+
+    The filter is Python-side (ES is not asked to rank accommodation fields);
+    unknown tags are ignored here — the composition root warns about them.
+    """
+    return all(
+        check(talk)
+        for tag, check in _ACCESS_CHECKS.items()
+        if tag in needs
+    )
+
+
+ACCESS_TAGS = frozenset(_ACCESS_CHECKS)
+
+
 def search_talks() -> list[dict]:
     """All talks, sorted by start time then room (used by GET /talks)."""
     ensure_index()
@@ -67,7 +94,8 @@ def distinct_topics() -> list[str]:
     return sorted(bucket["key"] for bucket in buckets)
 
 
-def search_candidates(text: str, size: int = 20) -> list[dict]:
+def search_candidates(text: str, size: int = 20,
+                      needs: set[str] | None = None) -> list[dict]:
     """Step 1 of /agenda: ranked hybrid-search candidates for an interest string.
 
     Returns [{"talk": <source doc>, "score": <float>}, ...], strongest first.
@@ -77,12 +105,25 @@ def search_candidates(text: str, size: int = 20) -> list[dict]:
     Hybrid: multi_match (BM25, exact keyword recall) + knn (semantic recall
     via the query embedding). ES fuses both hit lists into one _score.
     Without OPENAI_API_KEY the knn half is skipped and ranking is BM25 only.
+    `needs` (validated at the request boundary) filters hits in Python via
+    _meets_access — never silently: the count that fell out is logged.
     """
     ensure_index()
     vector = embed_query(text)
-    if vector is None:
-        return _search_bm25_only(text, size)
+    ranked = _search_hybrid_with_embedding(text, size, vector) \
+        if vector is not None else _search_bm25_only(text, size)
+    if needs:
+        kept = [hit for hit in ranked if _meets_access(hit["talk"], needs)]
+        logger.info(
+            "access filter: %d of %d hits pass needs=%s",
+            len(kept), len(ranked), sorted(needs),
+        )
+        ranked = kept
+    return ranked
 
+
+def _search_hybrid_with_embedding(text: str, size: int,
+                                  vector: list[float]) -> list[dict]:
     resp = client.search(
         index=INDEX,
         size=size,
