@@ -1,8 +1,14 @@
 """Basic tests for builder.py — pure dict pins, fully hermetic: fit-first
 walk, half-open interval clash rule, honest alternatives from the agenda.
+
+The builder's unscheduled items carry the score breakdown at item level
+(the same evidence explain.py reads for agenda picks), so verdict asserts
+use subsets rather than whole-dict equality.
 """
 
 from builder import build_plan, offer_alternatives
+
+PICK_KEYS = {"talk", "reason", "clashes_with"}
 
 
 def _talk(tid: str, start: str, end: str, *, capacity=100, fill=50,
@@ -20,10 +26,10 @@ def test_full_room_skips_with_open_slot_and_empty_clashes():
     open_slot = _talk("T10", "11:00", "11:40", final=5.0)
     plan = offer_alternatives(build_plan([full, open_slot]))
     assert [p["talk"]["id"] for p in plan["agenda"]] == ["T10"]
-    assert plan["unscheduled"] == [
-        {"talk": full["talk"], "reason": "full", "clashes_with": [],
-         "alternative": open_slot["talk"]},
-    ]
+    [loser] = plan["unscheduled"]
+    assert loser["talk"] is full["talk"]
+    assert loser["reason"] == "full" and loser["clashes_with"] == []
+    assert loser["alternative"] == open_slot["talk"]
 
 
 def test_back_to_back_talks_do_not_clash_but_overlaps_do():
@@ -37,9 +43,10 @@ def test_back_to_back_talks_do_not_clash_but_overlaps_do():
               _talk("C2", "11:20", "12:00", final=7.0)]
     plan = build_plan(clashy)
     assert [p["talk"]["id"] for p in plan["agenda"]] == ["C1"]
-    assert plan["unscheduled"] == [
-        {"talk": clashy[1]["talk"], "reason": "clash", "clashes_with": ["C1"]},
-    ]
+    [loser] = plan["unscheduled"]
+    assert {k: loser[k] for k in PICK_KEYS} == {
+        "talk": clashy[1]["talk"], "reason": "clash", "clashes_with": ["C1"]}
+    assert loser["final_score"] == 7.0  # breakdown rides at item level
 
 
 def test_alternatives_form_from_agenda_or_honest_none():
