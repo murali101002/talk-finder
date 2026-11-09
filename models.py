@@ -34,6 +34,6 @@ class UnscheduledItem(BaseModel):
 
 class AgendaResponse(BaseModel):
     topics: list[str] = []
-    agenda: list[dict] = []               # clash-free, time-sorted item dicts
-    unscheduled: list[UnscheduledItem] = []  # full/clash losers, never hidden
+    agenda: list[dict] = []                       # clash-free, time-sorted item dicts
+    unscheduled: list[UnscheduledItem] = []       # every full/clash verdict
     note: str | None = None

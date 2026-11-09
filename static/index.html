@@ -100,6 +100,9 @@ legend { font-weight: 500; font-size: var(--text-sm); color: var(--color-ink-2);
 .btn--primary.is-busy { opacity: 0.85; cursor: progress; }
 .toggle { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: var(--text-sm); color: var(--color-ink-2); cursor: pointer; }
 .toggle input { width: 18px; height: 18px; accent-color: var(--color-accent); }
+.demo-note { font-size: var(--text-xs); color: var(--color-muted); }
+.a11y-tags { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-block: var(--space-2xs); }
+.a11y-tag { font-size: var(--text-xs); padding: 0 var(--space-xs); border-radius: var(--radius-pill); background: var(--color-paper-2); box-shadow: inset 0 0 0 1px var(--color-rule); color: var(--color-ink-2); white-space: nowrap; }
 .helper { min-height: 1lh; font-size: var(--text-sm); color: var(--color-muted) !important; }
 .helper__error { color: var(--color-error) !important; }
 
@@ -143,6 +146,8 @@ summary:focus-visible, .dd__btn:focus-visible { outline: 2px solid var(--color-f
 .table td, .table th { border: 0; border-top: var(--rule-hair) solid var(--color-rule); padding: var(--space-sm) var(--space-xs) var(--space-sm) 0; vertical-align: top; text-align: left; }
 .table th { font-size: var(--text-sm); font-weight: 500; color: var(--color-muted); }
 .table .t-time { white-space: nowrap; font-family: var(--font-outlier); font-size: var(--text-md); color: var(--color-ink-2); }
+.table .t-q { width: 28px; padding-right: 0; }
+.table .t-q input { width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
 .table .t-what { min-width: 0; overflow-wrap: break-word; }
 .t-title { font-weight: 500; }
 .t-meta { color: var(--color-muted); font-size: var(--text-sm); }
@@ -198,6 +203,7 @@ body:not(.show-scores) .scores { display: none; }
     <div class="form__row">
       <button class="btn btn--primary" id="build" type="submit">Show my agenda</button>
       <label class="toggle"><input type="checkbox" id="showScores"> Show scores</label>
+      <span class="demo-note" title="Scores are illustrative seed data for the demo, not real reputation signals.">only for demo</span>
       <output class="helper" id="helper" for="build"></output>
     </div>
   </form>
@@ -216,6 +222,11 @@ body:not(.show-scores) .scores { display: none; }
 <script>
 document.body.classList.add("js");
 const $ = (id) => document.getElementById(id);
+/* watch-later: user-ticked talk ids; the recording queue is a choice,
+   not automatic, and lives client-side across submissions */
+const watchLater = new Set();
+let registry = new Map();
+let lastData = null;
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function setHelper(msg, isError) {
@@ -261,12 +272,29 @@ function scores(item) {
   return `<span class="scores num">relevance ${esc(item.relevance_score)}, speaker ${esc(item.speaker_score)}, final ${esc(item.final_score)}</span>`;
 }
 
-function tableRow(cells, item, whyLine, extra) {
+function a11yTags(item) {
+  const tags = [
+    ["step_free", "Step-free"], ["wheelchair", "Wheelchair"],
+    ["hearing_loop", "Hearing loop"], ["captions", "Captions"],
+    ["sign_language", "Sign language"],
+  ].filter(([field]) => item[field])
+   .map(([, label]) => `<span class="a11y-tag" title="${esc(item.access_note || "")}">${esc(label)}</span>`);
+  return tags.length ? `<div class="a11y-tags">${tags.join("")}</div>` : "";
+}
+
+function tableRow(item, whyLine, extra, { queueable = true } = {}) {
+  const queueCell = queueable
+    ? `<td class="t-q"><input type="checkbox" data-queue="${esc(item.id)}"
+        aria-label="Queue the recording of ${esc(item.title)} to watch later"
+        ${watchLater.has(item.id) ? "checked" : ""}></td>`
+    : "";
   return `<tr>
+    ${queueCell}
     <td class="t-time num">${esc(item.start)} to ${esc(item.end)}</td>
     <td class="t-what">
       <div class="t-title">${esc(item.title)}</div>
       <div class="t-meta">${esc(item.speaker)}, ${esc(item.track)}, ${esc(item.room)}</div>
+      ${a11yTags(item)}
       <p class="t-why">${esc(whyLine)}</p>
       ${extra || ""}
       ${scores(item)}
@@ -276,33 +304,45 @@ function tableRow(cells, item, whyLine, extra) {
 
 function groups(response) {
   const parts = [];
+  /* the watch-later registry: every talk the response carries, for the
+     user-ticked recording queue (the queue is a choice, not automatic) */
+  registry = new Map();
+  for (const i of response.agenda) registry.set(i.id, { item: i, whyLine: i.why_line });
+  for (const u of response.unscheduled) registry.set(u.talk.id, { item: u.talk, whyLine: u.why_line });
   const byId = new Map(response.agenda.map(i => [i.id, i]));
   if (response.agenda.length) {
     parts.push(`<div class="group"><div class="group__head"><h2>Confirmed</h2><span class="group__count">${response.agenda.length} pick${response.agenda.length === 1 ? "" : "s"}</span></div>
-      <table class="table"><tbody>${response.agenda.map(i => tableRow(null, i, i.why_line)).join("")}</tbody></table></div>`);
+      <table class="table"><tbody>${response.agenda.map(i => tableRow(i, i.why_line)).join("")}</tbody></table></div>`);
   }
-  const full = response.unscheduled.filter(u => u.reason === "full");
-  const clashes = response.unscheduled.filter(u => u.reason === "clash");
-  for (const [list, label, extra] of [[full, "Full rooms", "tab--full"], [clashes, "Clashes", "tab--clash"]]) {
-    if (!list.length) continue;
+  const full = (response.unscheduled || []).filter(u => u.reason === "full");
+  if (full.length) {
     const rows = [];
-    for (const u of list) {
+    for (const u of full) {
+      let extraHTML = u.alternative
+        ? `<div class="remedy">Instead at ${esc(u.alternative.start)} to ${esc(u.alternative.end)}: <span class="t-title">${esc(u.alternative.title)}</span> with ${esc(u.alternative.speaker)}, ${esc(u.alternative.room)}.</div>`
+        : `<div class="remedy">Nothing else plays in this slot, so there is no swap.</div>`;
+      rows.push(tableRow(u.talk, u.why_line, extraHTML));
+    }
+    parts.push(`<div class="group"><div class="group__head"><h2>Full rooms</h2><span class="tab tab--full">${full.length} unavailable</span></div>
+      <table class="table"><tbody>${rows.join("")}</tbody></table></div>`);
+  }
+  const queued = [...watchLater].filter(id => registry.has(id));
+  if (queued.length) {
+    const rows = [];
+    for (const id of queued) {
+      const { item, whyLine } = registry.get(id);
+      const live = (response.unscheduled || []).find(u => u.talk.id === id && u.reason === "clash");
       let extraHTML = "";
-      if (u.reason === "clash") {
-        // the winner must read as a talk the user can act on, never an id
-        const winners = u.clashes_with.map(id => byId.get(id)).filter(Boolean);
+      if (live) {
+        const winners = live.clashes_with.map(wid => byId.get(wid)).filter(Boolean);
         extraHTML += winners.length
           ? `<div class="remedy">Clashes with ${winners.map(w =>
               `<span class="t-title">${esc(w.title)}</span> (${esc(w.start)} to ${esc(w.end)})`).join(", ")}.</div>`
           : `<div class="remedy">Clashes with a confirmed pick.</div>`;
-      } else if (u.alternative) {
-        extraHTML += `<div class="remedy">Instead at ${esc(u.alternative.start)} to ${esc(u.alternative.end)}: <span class="t-title">${esc(u.alternative.title)}</span> with ${esc(u.alternative.speaker)}, ${esc(u.alternative.room)}.</div>`;
-      } else {
-        extraHTML += `<div class="remedy">Nothing else plays in this slot, so there is no swap.</div>`;
       }
-      rows.push(tableRow(null, u.talk, u.why_line, extraHTML));
+      rows.push(tableRow(item, whyLine, extraHTML));
     }
-    parts.push(`<div class="group"><div class="group__head"><h2>${label}</h2><span class="tab ${extra}">${list.length} unavailable</span></div>
+    parts.push(`<div class="group"><div class="group__head"><h2>Recording queue</h2><span class="tab tab--clash">${queued.length} to watch later</span></div>
       <table class="table"><tbody>${rows.join("")}</tbody></table></div>`);
   }
   return parts.join("");
@@ -318,6 +358,15 @@ function render(response) {
   target.hidden = false;
   if (response.note) setHelper(response.note, true);
 }
+
+/* queue ticks survive re-renders and re-submissions by talk id */
+$("tlFull").addEventListener("change", (event) => {
+  const input = event.target.closest("input[data-queue]");
+  if (!input) return;
+  const id = input.dataset.queue;
+  if (input.checked) watchLater.add(id); else watchLater.delete(id);
+  if (lastData) render(lastData);
+});
 
 $("ask").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -341,6 +390,7 @@ $("ask").addEventListener("submit", async (event) => {
     } else if (!res.ok) {
       setHelper("Something broke on the server (" + res.status + "). Not recovered.", true);
     } else {
+      lastData = data;
       render(data);
       if (!data.note) setHelper("", false);
     }
