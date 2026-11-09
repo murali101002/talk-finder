@@ -31,7 +31,8 @@ def validate_talk(talk: dict) -> str | None:
     for field in ("start", "end"):
         value = talk[field]
         parts = value.split(":") if isinstance(value, str) else []
-        if len(parts) != 2 or not all(p.isdigit() and len(p) == 2 for p in parts):
+        if len(parts) != 2 or not all(p.isdigit() and len(p) == 2 for p in parts) \
+                or int(parts[0]) > 23 or int(parts[1]) > 59:
             return f"{field} must be a HH:mm string, got {value!r}"
     capacity, fill = talk["capacity"], talk["fill"]
     if not isinstance(capacity, int) or capacity < 1:
