@@ -43,5 +43,17 @@ def health() -> dict:
     return {"app_status": "ok", "elasticsearch": "down"}
 
 
+@app.get("/livez")
+def liveness() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/readyz")
+def readiness() -> dict[str, str]:
+    if not es_client().ping(request_timeout=2):
+        raise HTTPException(503, "Elasticsearch is unavailable")
+    return {"status": "ok"}
+
+
 setup_otel(app)
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

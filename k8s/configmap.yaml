@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: talkfinder-config
+  namespace: talkfinder
+data:
+  ES_URL: http://host.docker.internal:9200
+  EMBEDDING_MODEL: text-embedding-3-small
+  EXPLAIN_MODEL: gpt-4o-mini
+  LOG_LEVEL: INFO
