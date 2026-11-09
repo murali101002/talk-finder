@@ -7,7 +7,6 @@ from pathlib import Path
 
 from dotenv import dotenv_values
 
-
 ROOT = Path(__file__).resolve().parents[1]
 secret_value = dotenv_values(ROOT / ".env").get("OPENAI_API_KEY", "")
 data = {}
