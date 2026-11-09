@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: talkfinder
+  namespace: talkfinder
+  labels:
+    app: talkfinder
+spec:
+  type: ClusterIP
+  selector:
+    app: talkfinder
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
