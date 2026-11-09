@@ -27,10 +27,11 @@ def test_search_talks_sorts_by_start_then_room(monkeypatch):
     shuffled_hits = [
         {"_source": {"id": "T03", "start": "12:00", "room": "Hall A"}},
         {"_source": {"id": "T02", "start": "11:00", "room": "Hall B"}},
+        {"_source": {"id": "T04", "start": "11:00"}},
         {"_source": {"id": "T01", "start": "11:00", "room": "Hall A"}},
     ]
     monkeypatch.setattr(retriever, "client", _fake_client(shuffled_hits))
-    assert [talk["id"] for talk in retriever.search_talks()] == ["T01", "T02", "T03"]
+    assert [talk["id"] for talk in retriever.search_talks()] == ["T04", "T01", "T02", "T03"]
 
 
 def test_embed_query_is_none_without_api_key(monkeypatch):

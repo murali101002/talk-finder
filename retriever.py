@@ -51,7 +51,7 @@ def search_talks() -> list[dict]:
     found = [hit["_source"] for hit in resp["hits"]["hits"]]
     logger.info("ES match_all: %d talks returned (%s)", len(found),
                 ", ".join(t["id"] for t in found) or "none")
-    return sorted(found, key=lambda talk: (talk["start"], talk["room"]))
+    return sorted(found, key=lambda talk: (talk["start"], talk.get("room", "")))
 
 
 def distinct_topics() -> list[str]:
