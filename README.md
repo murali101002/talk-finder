@@ -36,7 +36,3 @@ uv run uvicorn main:app --reload
 
 Then open **http://localhost:8000** — pick interests, optionally tick
 accommodations, and show your agenda.
-
-## What the day looks like
-
-The pipeline runs in a fixed order, one stage per module, all speaks plain dicts:
