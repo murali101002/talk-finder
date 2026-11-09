@@ -6,163 +6,157 @@
 <title>TalkFinder: one clash-free agenda for the day</title>
 <meta name="description" content="Pick your topics and any accommodation you need; TalkFinder schedules your conference day around clashes and full rooms.">
 <style>
-/* Hallmark · shape: app screen · genre: modern-minimal · theme: Dose (deal 1/3, seed one-page-conference-agenda-tool-6679·b18d27fd·2026-11-09·r0)
- * nav: single wordmark bar · signature: the 3-group day timeline · states: loading, empty, error, full (both regions) · dose: white
- * axes: light/grotesk-sans/chromatic-green · posture: committed · contrast: pass · v2.0.0
- * faces: system equivalents (this repo ships no external assets — the theme's CDN links are waived here) */
-/* Hallmark · pre-emit critique: P_ H_ E_ S_ R_ V_ E · weakest: E, the empty state leads the timeline region and carries the one action, so the picker is never pointed at twice */
+/* Hallmark · checked: 2026-11-09 · genre: modern-minimal (inferred)
+ * restyle: dark schedule ground, green timeline spine (user request; reference wemakedevs.org schedule) · built: Hallmark · wiring kept
+ * floor: 0 FAIL · fixed: 2 (48 tokens lifted, 39a three-channel disabled) · v2.0.0 */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
-  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem; --text-2xl: 1.728rem;
-  --text-display-s: 1.44rem; --text-display: 1.728rem; --text-section: 1.2rem; --text-title: 1rem;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --dur-micro: 120ms; --dur-short: 220ms;
-  --color-paper: oklch(97.6% 0.011 88); --color-paper-2: oklch(96.5% 0.02 160); --color-paper-3: oklch(93% 0.036 160);
-  --color-ink: oklch(21% 0.025 170); --color-ink-2: oklch(31% 0.02 170); --color-muted: oklch(49% 0.024 165);
-  --color-rule: oklch(86.5% 0.022 140);
-  --color-accent: oklch(50% 0.13 160); --color-accent-deep: oklch(42% 0.11 162); --color-accent-soft: oklch(88% 0.08 160); --color-accent-ink: oklch(99% 0.006 160);
-  --color-focus: oklch(45% 0.14 160);
-  --p-mon: oklch(85% 0.052 22); --p-tue: oklch(87.5% 0.058 64); --p-wed: oklch(91.5% 0.064 98); --p-thu: oklch(86.5% 0.075 160);
-  --light: oklch(99.4% 0.016 84); --glint: oklch(100% 0 0);
-  /* faces: system stacks, mono for the dose/times (no external font files) */
-  --font-display: system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem;
+  --text-display-s: 1.44rem; --text-display: 2.074rem; --text-section: 1.2rem; --text-title: 1rem;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-micro: 140ms; --dur-short: 240ms;
+  --color-paper: oklch(15% 0.012 152); --color-paper-2: oklch(19% 0.014 152); --color-paper-3: oklch(24% 0.016 152);
+  --color-ink: oklch(95% 0.008 152); --color-ink-2: oklch(85% 0.01 152); --color-muted: oklch(66% 0.014 152);
+  --color-rule: oklch(30% 0.014 152);
+  --color-accent: oklch(80% 0.19 149); --color-accent-soft: oklch(30% 0.05 150); --color-accent-ink: oklch(15% 0.02 150);
+  --color-focus: oklch(82% 0.17 149);
+  --color-warn: oklch(78% 0.13 75);
+  --font-display: -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-body: -apple-system, "Segoe UI", system-ui, sans-serif;
   --font-outlier: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
   --radius-card: 14px; --radius-input: 10px; --radius-pill: 999px; --rule-hair: 1px;
-  --control-h: 40px;
-  --shadow-card: 0 1px 2px oklch(30% 0.03 165 / 0.08), 0 24px 48px -24px oklch(40% 0.08 165 / 0.35);
-  --tracking-display: -0.02em; --display-weight: 700;
-  --container: 760px; --gutter: 24px;
+  --shadow-card: 0 1px 2px oklch(10% 0.01 150 / 0.35), 0 16px 40px -20px oklch(8% 0.01 150 / 0.55);
+  --shadow-btn: 0 1px 0 oklch(8% 0.01 150 / 0.3);
+  --control-h: 44px;
+  --container: 860px; --gutter: 24px;
 }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { overflow-x: clip; }
-html { scrollbar-color: var(--color-muted) var(--color-paper); }
-body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-md); line-height: 1.55; -webkit-font-smoothing: antialiased; caret-color: var(--color-accent); }
-::selection { background: color-mix(in oklab, var(--color-accent) 22%, transparent); color: var(--color-ink); }
-:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); font-synthesis: none; letter-spacing: var(--tracking-display); line-height: 1.05; overflow-wrap: break-word; min-width: 0; text-wrap: balance; }
-h1 { font-size: var(--text-display); } h2 { font-size: var(--text-section); line-height: 1.2; } h3 { font-size: var(--text-title); line-height: 1.2; }
+html { scrollbar-color: var(--color-rule) var(--color-paper); }
+body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-md); line-height: 1.6; -webkit-font-smoothing: antialiased; caret-color: var(--color-accent); }
+::selection { background: color-mix(in oklab, var(--color-accent) 30%, transparent); color: var(--color-ink); }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-input); }
+h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; overflow-wrap: break-word; min-width: 0; text-wrap: balance; }
+h1 { font-size: var(--text-display); }
+h2 { font-size: var(--text-section); }
+h3 { font-size: var(--text-title); }
 p { margin: 0; text-wrap: pretty; }
 button, input { font: inherit; }
 [hidden] { display: none !important; }
 .container { width: 100%; max-width: calc(var(--container) + 2 * var(--gutter)); margin-inline: auto; padding-inline: var(--gutter); }
-.dose, .num { font-family: var(--font-outlier); font-variant-numeric: tabular-nums; }
-.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* shell */
-.shell { border-bottom: var(--rule-hair) solid var(--color-rule); }
-.shell__row { display: flex; align-items: center; justify-content: space-between; padding-block: var(--space-md); }
-.wordmark { font-family: var(--font-display); font-weight: var(--display-weight); font-size: var(--text-lg); letter-spacing: -0.01em; }
+.shell { border-bottom: var(--rule-hair) solid var(--color-rule); background: color-mix(in oklab, var(--color-paper-2) 60%, transparent); }
+.shell__row { display: flex; align-items: baseline; justify-content: space-between; padding-block: var(--space-md); }
+.wordmark { font-weight: 700; font-size: var(--text-lg); letter-spacing: -0.01em; }
 .byline { color: var(--color-muted); font-size: var(--text-sm); }
 
-/* the tray: the form sunken as a plastic well */
-.tray { display: grid; gap: var(--space-lg); padding: var(--space-lg) 0 var(--space-xl); }
-.tray .lead { color: var(--color-ink-2); max-width: 52ch; }
+/* tray */
+.tray { padding: var(--space-xl) 0 var(--space-lg); display: grid; gap: var(--space-lg); }
+.console { border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-2); border-radius: var(--radius-card); padding: var(--space-lg); display: grid; gap: var(--space-lg); box-shadow: var(--shadow-card); }
+.console .lead { color: var(--color-muted); }
 fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-legend { font-weight: 500; font-size: var(--text-sm); color: var(--color-ink-2); margin-bottom: var(--space-xs); }
-.keys { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
-.keys[data-state="loading"] .sk-chip { height: var(--control-h); width: 88px; border-radius: var(--radius-pill); background: var(--color-paper-3); }
-.keys .key {
-  height: var(--control-h); padding: 0 var(--space-md); border: 0; border-radius: var(--radius-pill);
-  cursor: pointer; font-size: var(--text-sm);
-  color: var(--color-ink);
-  background: color-mix(in oklab, var(--p-thu) 34%, transparent);
-  box-shadow: inset 0 0 0 1px var(--color-rule), inset 0 1.5px 0 var(--glint), 0 1px 0 var(--color-rule);
-  transition: transform var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
-}
-.keys .key:hover { background: color-mix(in oklab, var(--p-thu) 55%, transparent); }
-.keys .key:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-.keys .key:active { transform: translateY(1px); }
-.keys .key[aria-pressed="true"] { background: var(--color-accent-soft); box-shadow: inset 0 0 0 2px var(--color-accent), inset 0 1.5px 0 var(--glint); }
-.keys .key[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; }
-.keys .keys__error { color: var(--color-ink-2); font-size: var(--text-sm); }
-.skel-row { display: grid; gap: var(--space-xs); margin-block: var(--space-sm); }
-.skel-row span { display: block; height: var(--control-h); border-radius: var(--radius-input); background: var(--color-paper-3); }
+.legend--sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* accommodations: real checkboxes with roomy taps */
-.checks { display: flex; flex-wrap: wrap; gap: 0; }
-.check { display: inline-flex; align-items: center; gap: var(--space-xs); min-height: var(--control-h); padding-inline: var(--space-md) var(--space-sm) 0; cursor: pointer; border-radius: var(--radius-input); }
-.check:hover { background: var(--color-paper-2); }
-.check input { width: 18px; height: 18px; accent-color: var(--color-accent); flex-shrink: 0; }
+.dd { position: relative; width: min(100%, 320px); }
+.dd__btn {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-xs);
+  min-height: var(--control-h); padding: 0 var(--space-md);
+  border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-input);
+  background: var(--color-paper); color: var(--color-ink);
+  cursor: pointer; list-style: none; font-size: var(--text-sm); font-weight: 500;
+  transition: border-color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
+}
+.dd__btn::-webkit-details-marker { display: none; }
+.dd__btn:hover { border-color: var(--color-accent); }
+summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.dd__filter { color: var(--color-muted); font-weight: 400; font-family: var(--font-outlier); }
+.dd__list {
+  position: absolute; inset-inline: 0; top: calc(100% + var(--space-2xs)); z-index: 100;
+  display: grid; padding: var(--space-2xs);
+  border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-input);
+  background: var(--color-paper-2); box-shadow: var(--shadow-card);
+  max-height: 300px; overflow-y: auto;
+  animation: settle var(--dur-short) var(--ease-out);
+}
+@keyframes settle { from { opacity: 0; transform: translateY(-4px); } }
+.dd__hint { padding: var(--space-xs) var(--space-sm); color: var(--color-muted); font-size: var(--text-sm); }
+.dd__list .check { width: 100%; min-height: 38px; padding-inline: var(--space-sm); font-size: var(--text-sm); border-radius: var(--radius-input); }
+.check { display: flex; align-items: center; gap: var(--space-xs); min-height: var(--control-h); cursor: pointer; padding-inline: var(--space-sm) var(--space-sm) 0; border-radius: var(--radius-input); transition: background-color var(--dur-micro) var(--ease-out); }
+.check:hover { background: var(--color-paper-3); }
+.check input, .qcheck input { width: 16px; height: 16px; accent-color: var(--color-accent); flex-shrink: 0; cursor: pointer; }
 
 .form__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-md); }
 .btn {
-  height: var(--control-h); padding: 0 var(--space-lg); border: 0; border-radius: var(--radius-input);
-  cursor: pointer; font-weight: 500; white-space: nowrap;
-  transition: transform var(--dur-micro) var(--ease-out);
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-h); padding: 0 var(--space-lg); cursor: pointer;
+  border: 0; border-radius: var(--radius-input);
+  font-weight: 600; font-size: var(--text-sm); white-space: nowrap;
+  transition: background-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
 }
-.btn--primary { background: linear-gradient(var(--color-accent), var(--color-accent-deep)); color: var(--color-accent-ink); box-shadow: 0 0 0 1px var(--color-accent-deep), 0 3px 0 var(--color-accent-deep); }
-.btn--primary:hover { filter: brightness(1.05); }
+.btn--primary { background: var(--color-accent); color: var(--color-accent-ink); box-shadow: var(--shadow-btn); }
+.btn--primary:hover { filter: brightness(1.08); }
 .btn--primary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-.btn--primary:active { transform: translateY(2px); box-shadow: 0 0 0 1px var(--color-accent-deep), 0 1px 0 var(--color-accent-deep); }
-.btn--primary[disabled] { opacity: 0.6; cursor: not-allowed; transform: none; }
-.btn--primary.is-busy { opacity: 0.85; cursor: progress; }
+.btn--primary:active { transform: translateY(1px); }
+.btn--primary[disabled] { background: var(--color-paper-3); color: var(--color-muted); cursor: not-allowed; }
+.btn--primary.is-busy { background: color-mix(in oklab, var(--color-accent) 75%, var(--color-paper-2)); color: var(--color-accent-ink); cursor: progress; }
 .toggle { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: var(--text-sm); color: var(--color-ink-2); cursor: pointer; }
-.toggle input { width: 18px; height: 18px; accent-color: var(--color-accent); }
+.toggle input { width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
 .demo-note { font-size: var(--text-xs); color: var(--color-muted); }
-.a11y-tags { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-block: var(--space-2xs); }
-.a11y-tag { font-size: var(--text-xs); padding: 0 var(--space-xs); border-radius: var(--radius-pill); background: var(--color-paper-2); box-shadow: inset 0 0 0 1px var(--color-rule); color: var(--color-ink-2); white-space: nowrap; }
 .helper { min-height: 1lh; font-size: var(--text-sm); color: var(--color-muted) !important; }
-.helper__error { color: var(--color-error) !important; }
+.helper__error { color: var(--color-warn) !important; }
 
-/* the timeline: the signature */
-.timeline { border-top: var(--rule-hair) solid var(--color-rule); padding: var(--space-xl) 0 var(--space-2xl); }
-.timeline__state { margin-block: var(--space-lg); color: var(--color-ink-2); max-width: 46ch; }
+/* the timeline: a green spine with square markers */
+.timeline { padding: var(--space-lg) 0 var(--space-2xl); display: grid; gap: var(--space-lg); }
+.timeline__state { color: var(--color-muted); border: var(--rule-hair) dashed var(--color-rule); border-radius: var(--radius-card); padding: var(--space-lg); }
 .timeline__skeleton { display: grid; gap: var(--space-sm); }
-.timeline__skeleton div { height: 64px; border-radius: var(--radius-card); background: var(--color-paper-2); border: 0; }
-.group { margin-block: var(--space-lg); }
-.group__head { display: flex; align-items: baseline; gap: var(--space-sm); margin-bottom: var(--space-xs); }
-.group__head h2 { color: var(--color-ink); }
-.group__count { color: var(--color-muted); font-size: var(--text-sm); }
+.timeline__skeleton div { height: 60px; border-radius: var(--radius-card); border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-2); opacity: 1; animation: breathe 1.6s var(--ease-out) infinite alternate; }
 
-/* dropdowns: the native details/summary pair dressed as a moulded control */
-.dd { position: relative; width: min(100%, 280px); }
-.dd__btn {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--space-xs);
-  min-height: var(--control-h); padding: 0 var(--space-md); border-radius: var(--radius-input);
-  cursor: pointer; list-style: none; font-size: var(--text-sm);
-  background: color-mix(in oklab, var(--p-thu) 34%, transparent);
-  box-shadow: inset 0 0 0 1px var(--color-rule), inset 0 1.5px 0 var(--glint), 0 1px 0 var(--color-rule);
-  transition: background-color var(--dur-micro) var(--ease-out);
-}
-.dd__btn::-webkit-details-marker { display: none; }
-.dd__btn:hover { background: color-mix(in oklab, var(--p-thu) 55%, transparent); }
-summary:focus-visible, .dd__btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-.dd__count { color: var(--color-muted); }
-.dd__list {
-  position: absolute; inset-inline: 0; top: calc(100% + var(--space-2xs)); z-index: 100;
-  display: grid; gap: 0; padding: var(--space-2xs);
-  border-radius: var(--radius-input); background: var(--color-paper);
-  box-shadow: inset 0 0 0 1px var(--color-rule), var(--shadow-card);
-  max-height: 300px; overflow-y: auto;
-}
-.dd__hint { padding: var(--space-xs) var(--space-sm); color: var(--color-ink-2); font-size: var(--text-sm); }
-.dd__list .check { width: 100%; min-height: 36px; padding-inline: var(--space-sm); }
-.tab { font-size: var(--text-sm); padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-pill); }
-.tab--full { background: var(--color-paper-3); color: var(--color-ink-2); }
-.tab--clash { background: transparent; box-shadow: inset 0 0 0 1px var(--color-rule); color: var(--color-ink-2); }
-.table { width: 100%; border-collapse: collapse; }
-.table td, .table th { border: 0; border-top: var(--rule-hair) solid var(--color-rule); padding: var(--space-sm) var(--space-xs) var(--space-sm) 0; vertical-align: top; text-align: left; }
-.table th { font-size: var(--text-sm); font-weight: 500; color: var(--color-muted); }
-.table .t-time { white-space: nowrap; font-family: var(--font-outlier); font-size: var(--text-md); color: var(--color-ink-2); }
-.table .t-q { width: 28px; padding-right: 0; }
-.table .t-q input { width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
-.table .t-what { min-width: 0; overflow-wrap: break-word; }
-.t-title { font-weight: 500; }
+@keyframes breathe { from { opacity: 0.45; } }
+.group { display: grid; gap: var(--space-sm); }
+.group__head { display: flex; align-items: baseline; gap: var(--space-sm); padding-left: 32px; }
+.group__head h2 { color: var(--color-ink); font-size: var(--text-title); letter-spacing: 0.02em; }
+.group__count, .tab { font-size: var(--text-xs); color: var(--color-muted); }
+.tab { border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-pill); padding: 1px var(--space-xs); font-family: var(--font-outlier); }
+.tab--live { border-color: color-mix(in oklab, var(--color-accent) 55%, var(--color-rule)); color: var(--color-accent); }
+.table { display: grid; width: 100%; --spine: 26px; }
+
+.table tr { position: relative; display: grid; grid-template-columns: auto 1fr; gap: var(--space-sm) var(--space-md); padding: var(--space-md) 0 var(--space-lg) 0; border-radius: var(--radius-card); transition: background-color var(--dur-micro) var(--ease-out); }
+.table tr:hover { background: color-mix(in oklab, var(--color-paper-2) 72%, transparent); }
+/* the spine and the marker */
+.table tr::before { content: ""; position: absolute; left: calc(var(--spine) + 1px); top: calc(1.2em + 8px); bottom: calc(-1 * var(--space-sm)); width: 2px; border-radius: 1px; background: var(--color-rule); }
+.table tr:last-child::before { display: none; }
+.table .t-stop { display: flex; align-items: flex-start; gap: var(--space-2xs); margin-top: var(--space-3xs); }
+.t-stop::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: var(--color-accent); }
+.t-time { font-family: var(--font-outlier); font-size: var(--text-sm); color: var(--color-accent); white-space: nowrap; }
+.t-title { font-weight: 600; overflow-wrap: break-word; min-width: 0; }
+.t-what { min-width: 0; overflow-wrap: break-word; }
 .t-meta { color: var(--color-muted); font-size: var(--text-sm); }
-.t-why { color: var(--color-ink-2); font-size: var(--text-sm); max-width: 58ch; margin-top: var(--space-2xs); }
-.scores { display: grid; gap: 0; margin-top: var(--space-xs); font-size: var(--text-sm); color: var(--color-muted); }
+.a11y-tags { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-block: var(--space-2xs); }
+.a11y-tag { font-size: var(--text-xs); padding: 0 var(--space-xs); border-radius: var(--radius-pill); background: var(--color-accent-soft); color: color-mix(in oklab, var(--color-accent) 82%, white); white-space: nowrap; }
+.t-why { font-size: var(--text-sm); color: var(--color-ink-2); max-width: 58ch; margin-top: var(--space-2xs); }
+.remedy { color: var(--color-muted); font-size: var(--text-sm); margin-top: var(--space-2xs); }
+.remedy .t-title { font-weight: 600; color: var(--color-ink-2); }
+.scores { display: grid; margin-top: var(--space-xs); font-size: var(--text-xs); color: var(--color-muted); font-family: var(--font-outlier); }
 .scores span { white-space: nowrap; }
 body:not(.show-scores) .scores { display: none; }
-.remedy { margin-top: var(--space-2xs); font-size: var(--text-sm); color: var(--color-ink-2); }
-.remedy .t-title { font-weight: 500; }
-.foot { border-top: var(--rule-hair) solid var(--color-rule); padding-block: var(--space-lg); color: var(--color-muted); font-size: var(--text-sm); }
-@media (min-width: 40rem) {
-  .table th, .table td { padding: var(--space-md) var(--space-sm) var(--space-md) 0; }
+.qcheck { display: inline-flex; align-items: center; gap: var(--space-xs); margin-top: var(--space-xs); font-size: var(--text-xs); color: var(--color-muted); cursor: pointer; }
+.qcheck input { margin: 0; }
+.qcheck:hover span { color: var(--color-ink-2); }
+.qcheck input:checked + span { color: var(--color-accent); }
+.foot { border-top: var(--rule-hair) solid var(--color-rule); padding-block: var(--space-md); color: var(--color-muted); font-size: var(--text-sm); }
+
+@media (max-width: 40rem) {
+  .shell__row { flex-direction: column; align-items: flex-start; gap: var(--space-2xs); }
+  .table tr { grid-template-columns: 1fr; }
+  .t-stop { margin-left: 20px; padding-left: var(--space-xs); }
+  .list { --spine: 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 </style>
 </head>
@@ -177,46 +171,48 @@ body:not(.show-scores) .scores { display: none; }
 <main class="container">
   <form id="ask" class="tray">
     <h1>Your day, one pick</h1>
-    <p class="lead">Choose what you want to see and any accommodation you need. TalkFinder schedules you around clashes and full rooms, and says why every pick is there.</p>
-    <fieldset id="topics-field">
-      <legend>Interests</legend>
-      <details class="dd" id="interestsDD">
-        <summary class="dd__btn">Interests <span class="dd__count num" id="interestsCount">(0)</span></summary>
-        <div class="dd__list" id="interestList" data-state="loading">
-          <span class="dd__hint">Loading the topic list&hellip;</span>
-        </div>
-      </details>
-    </fieldset>
-    <fieldset id="access-field">
-      <legend>Accommodations</legend>
-      <details class="dd" id="accessDD">
-        <summary class="dd__btn">Accommodations <span class="dd__count num" id="accessCount">(0)</span></summary>
-        <div class="dd__list" id="accList">
-          <label class="check"><input type="checkbox" value="step_free"> Step-free access</label>
-          <label class="check"><input type="checkbox" value="wheelchair"> Wheelchair spaces</label>
-          <label class="check"><input type="checkbox" value="hearing_loop"> Hearing loop</label>
-          <label class="check"><input type="checkbox" value="captions"> Captions</label>
-          <label class="check"><input type="checkbox" value="sign_language"> Sign language</label>
-        </div>
-      </details>
-    </fieldset>
-    <div class="form__row">
-      <button class="btn btn--primary" id="build" type="submit">Show my agenda</button>
-      <label class="toggle"><input type="checkbox" id="showScores"> Show scores</label>
-      <span class="demo-note" title="Scores are illustrative seed data for the demo, not real reputation signals.">only for demo</span>
-      <output class="helper" id="helper" for="build"></output>
+    <div class="console">
+      <p class="lead">Choose what you want to see and any accommodation you need. TalkFinder schedules you around clashes and full rooms, and says why every pick is there.</p>
+      <fieldset id="topics-field">
+        <legend class="legend--sr">Interests</legend>
+        <details class="dd" id="interestsDD">
+          <summary class="dd__btn">Interests <span class="dd__filter num" id="interestsCount">(0)</span></summary>
+          <div class="dd__list" id="interestList" data-state="loading">
+            <span class="dd__hint">Loading the topic list&hellip;</span>
+          </div>
+        </details>
+      </fieldset>
+      <fieldset id="access-field">
+        <legend class="legend--sr">Accommodations</legend>
+        <details class="dd" id="accessDD">
+          <summary class="dd__btn">Accommodations <span class="dd__filter num" id="accessCount">(0)</span></summary>
+          <div class="dd__list" id="accList">
+            <label class="check"><input type="checkbox" value="step_free"> Step-free access</label>
+            <label class="check"><input type="checkbox" value="wheelchair"> Wheelchair spaces</label>
+            <label class="check"><input type="checkbox" value="hearing_loop"> Hearing loop</label>
+            <label class="check"><input type="checkbox" value="captions"> Captions</label>
+            <label class="check"><input type="checkbox" value="sign_language"> Sign language</label>
+          </div>
+        </details>
+      </fieldset>
+      <div class="form__row">
+        <button class="btn btn--primary" id="build" type="submit">Show my agenda</button>
+        <label class="toggle"><input type="checkbox" id="showScores"> Show scores</label>
+        <span class="demo-note" title="Scores are illustrative seed data for the demo, not real reputation signals.">only for demo</span>
+        <output class="helper" id="helper" for="build"></output>
+      </div>
     </div>
   </form>
 
-  <section class="timeline" id="timeline" aria-live="polite">
+  <section class="timeline" id="timeline">
     <p class="timeline__state" id="tlState">Nothing scheduled yet. Pick your interests above, then show your agenda.</p>
-    <div class="timeline__skeleton" id="tlSkeleton" hidden aria-hidden="true"><div></div><div></div><div></div></div>
+    <div class="timeline__skeleton" id="tlSkeleton" hidden><div></div><div></div><div></div></div>
     <div id="tlFull" hidden></div>
   </section>
 </main>
 
 <footer class="foot">
-  <div class="container">FastAPI demo. Health lives at <span class="dose">/health</span>; the data is the live seed.</div>
+  <div class="container">FastAPI demo. Health lives at <span class="num">/health</span>; the data is the live seed.</div>
 </footer>
 
 <script>
@@ -282,15 +278,14 @@ function a11yTags(item) {
   return tags.length ? `<div class="a11y-tags">${tags.join("")}</div>` : "";
 }
 
-function tableRow(item, whyLine, extra, { queueable = true } = {}) {
-  const queueCell = queueable
-    ? `<td class="t-q"><input type="checkbox" data-queue="${esc(item.id)}"
-        aria-label="Queue the recording of ${esc(item.title)} to watch later"
-        ${watchLater.has(item.id) ? "checked" : ""}></td>`
-    : "";
+function tableRow(item, whyLine, extra) {
+  const queueLine = `<div class="qcheck">
+      <input type="checkbox" data-queue="${esc(item.id)}"
+        ${watchLater.has(item.id) ? "checked" : ""}>
+      <span>Add to record queue</span>
+    </div>`;
   return `<tr>
-    ${queueCell}
-    <td class="t-time num">${esc(item.start)} to ${esc(item.end)}</td>
+    <td class="t-stop"><span class="t-time num">${esc(item.start)} to ${esc(item.end)}</span></td>
     <td class="t-what">
       <div class="t-title">${esc(item.title)}</div>
       <div class="t-meta">${esc(item.speaker)}, ${esc(item.track)}, ${esc(item.room)}</div>
@@ -298,6 +293,7 @@ function tableRow(item, whyLine, extra, { queueable = true } = {}) {
       <p class="t-why">${esc(whyLine)}</p>
       ${extra || ""}
       ${scores(item)}
+      ${queueLine}
     </td>
   </tr>`;
 }
@@ -311,8 +307,8 @@ function groups(response) {
   for (const u of response.unscheduled) registry.set(u.talk.id, { item: u.talk, whyLine: u.why_line });
   const byId = new Map(response.agenda.map(i => [i.id, i]));
   if (response.agenda.length) {
-    parts.push(`<div class="group"><div class="group__head"><h2>Confirmed</h2><span class="group__count">${response.agenda.length} pick${response.agenda.length === 1 ? "" : "s"}</span></div>
-      <table class="table"><tbody>${response.agenda.map(i => tableRow(i, i.why_line)).join("")}</tbody></table></div>`);
+    parts.push(`<div class="group band"><div class="group__head"><h2>Confirmed</h2><span class="tab tab--live">${response.agenda.length} pick${response.agenda.length === 1 ? "" : "s"}</span></div>
+      <table class="table" aria-label="Confirmed picks"><tbody>${response.agenda.map(i => tableRow(i, i.why_line)).join("")}</tbody></table></div>`);
   }
   const full = (response.unscheduled || []).filter(u => u.reason === "full");
   if (full.length) {
@@ -323,8 +319,22 @@ function groups(response) {
         : `<div class="remedy">Nothing else plays in this slot, so there is no swap.</div>`;
       rows.push(tableRow(u.talk, u.why_line, extraHTML));
     }
-    parts.push(`<div class="group"><div class="group__head"><h2>Full rooms</h2><span class="tab tab--full">${full.length} unavailable</span></div>
-      <table class="table"><tbody>${rows.join("")}</tbody></table></div>`);
+    parts.push(`<div class="group"><div class="group__head"><h2>Full rooms</h2><span class="tab">${full.length} unavailable</span></div>
+      <table class="table" aria-label="Full rooms"><tbody>${rows.join("")}</tbody></table></div>`);
+  }
+  const clash = (response.unscheduled || []).filter(u => u.reason === "clash");
+  if (clash.length) {
+    const rows = [];
+    for (const u of clash) {
+      const winners = u.clashes_with.map(wid => byId.get(wid)).filter(Boolean);
+      const extraHTML = winners.length
+        ? `<div class="remedy">Clashes with ${winners.map(w =>
+            `<span class="t-title">${esc(w.title)}</span> (${esc(w.start)} to ${esc(w.end)})`).join(", ")}.</div>`
+        : `<div class="remedy">Clashes with a confirmed pick.</div>`;
+      rows.push(tableRow(u.talk, u.why_line, extraHTML));
+    }
+    parts.push(`<div class="group"><div class="group__head"><h2>Clashes</h2><span class="tab">${clash.length} run beside your picks</span></div>
+      <table class="table" aria-label="Clashes"><tbody>${rows.join("")}</tbody></table></div>`);
   }
   const queued = [...watchLater].filter(id => registry.has(id));
   if (queued.length) {
@@ -342,8 +352,8 @@ function groups(response) {
       }
       rows.push(tableRow(item, whyLine, extraHTML));
     }
-    parts.push(`<div class="group"><div class="group__head"><h2>Recording queue</h2><span class="tab tab--clash">${queued.length} to watch later</span></div>
-      <table class="table"><tbody>${rows.join("")}</tbody></table></div>`);
+    parts.push(`<div class="group"><div class="group__head"><h2>Recording queue</h2><span class="tab tab--live">${queued.length} to watch later</span></div>
+      <table class="table" aria-label="Recording queue"><tbody>${rows.join("")}</tbody></table></div>`);
   }
   return parts.join("");
 }
