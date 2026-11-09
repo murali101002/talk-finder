@@ -1,8 +1,4 @@
-"""Step 1 — Elasticsearch access layer.
 
-Every ES read lives here; routes never touch the ES client directly.
-Current target: local ES 9.5.5 (checked, not guessed) on ES_URL from .env.
-"""
 
 import logging
 import os
@@ -25,12 +21,7 @@ client = Elasticsearch(ES_URL)
 
 
 def embed_query(text: str) -> list[float] | None:
-    """Query embedding at request time, same model as the indexed corpus.
-
-    Returns None when OPENAI_API_KEY is unset (cold-start / no key yet):
-    callers then skip the knn half instead of failing the request.
-    Dims come from the model's default — no number hardcoded here.
-    """
+    
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         logger.info("api_key not found!!!")
@@ -65,9 +56,6 @@ def search_talks() -> list[dict]:
 
 def distinct_topics() -> list[str]:
     """Distinct topic keywords across the corpus, alphabetical.
-
-    Backs GET /topics — the frontend's topic multi-select must offer exactly
-    what the corpus actually contains, not a hardcoded list.
     """
     ensure_index()
     resp = client.search(
