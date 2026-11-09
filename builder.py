@@ -21,12 +21,9 @@ def is_full(talk: dict) -> bool:
 
 def match_reasons(talk: dict, interest_words: set[str]) -> list[str]:
     """Matched topic keywords for this talk, lexically matched in topic order."""
+    words = {w.lower().strip() for w in interest_words if w and w.strip()}
     topics = [t.lower() for t in talk["topics"]]
-    return [
-        t
-        for t in topics
-        if any(t in w or w in t for w in interest_words)
-    ]
+    return [t for t in topics if t in words or set(t.split()) & words]
 
 
 def build_plan(candidates: list[dict]) -> dict:

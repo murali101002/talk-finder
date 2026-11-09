@@ -2,7 +2,7 @@
 walk, half-open interval clash rule, honest alternatives from the agenda.
 """
 
-from builder import build_plan, offer_alternatives
+from builder import build_plan, match_reasons, offer_alternatives
 
 
 def _talk(tid: str, start: str, end: str, *, capacity=100, fill=50,
@@ -55,3 +55,8 @@ def test_alternatives_form_from_agenda_or_honest_none():
     by_id = {u["talk"]["id"]: u for u in plan["unscheduled"]}
     assert by_id["L1"]["alternative"]["id"] == "W1"
     assert by_id["L2"]["alternative"] is None
+
+
+def test_match_reasons_matches_words_not_substrings_and_ignores_empty_words():
+    talk = {"topics": ["Cartography", "Data Science", "AI"]}
+    assert match_reasons(talk, {"art", " DATA ", "", " "}) == ["data science"]
