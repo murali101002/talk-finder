@@ -7,8 +7,13 @@ from fastapi import APIRouter, HTTPException
 from builder import build_plan, offer_alternatives
 from explain import attach_lines
 from models import AgendaRequest, AgendaResponse, UnscheduledItem
-from retriever import (ACCESS_TAGS, count_meeting_needs, distinct_topics,
-                       ensure_index, search_candidates)
+from retriever import (
+    ACCESS_TAGS,
+    count_meeting_needs,
+    distinct_topics,
+    ensure_index,
+    search_candidates,
+)
 from scoring import rank_candidates
 
 logger = logging.getLogger("talkfinder.agenda")
