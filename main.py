@@ -3,6 +3,7 @@
 import logging
 import os
 from fastapi import FastAPI, HTTPException
+from functools import lru_cache
 
 from telemetry import setup_otel
 from elasticsearch import Elasticsearch
@@ -14,12 +15,16 @@ app = FastAPI(title="TalkFinder", description="Agenda finder for conference atte
 
 load_dotenv()
 
-def es_client():
-    es_url = os.getenv('ES_URL','')
-    if not es_url:
-        logger.error("App Un-healthy!!!ES_URL is not configured!!!")
-        raise HTTPException(503, "App Un-healthy!!!ES_URL is not configured!!!")
+@lru_cache(maxsize=1)
+def _build_es(es_url: str) -> Elasticsearch:
     return Elasticsearch(es_url)
+
+def es_client() -> Elasticsearch:
+    es_url = os.getenv('ES_URL', '')
+    if not es_url:
+        logger.error("ES_URL is not configured")
+        raise HTTPException(503, "ES_URL is not configured")
+    return _build_es(es_url)
 
 
 
