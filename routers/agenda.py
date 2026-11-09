@@ -53,16 +53,23 @@ def agenda(payload: AgendaRequest) -> dict:
         return AgendaResponse(topics=topics, note="No matching talks for these "
                            "interests. Try broader topic words.").model_dump()
 
-    ranked = rank_candidates(scored)
+    ranked = rank_candidates([
+        {"talk": c["talk"], "relevance": c["score"]} for c in scored
+    ])
     plan = offer_alternatives(build_plan(ranked))
 
     agenda_items = [_flatten(pick) for pick in plan["agenda"]]
     agenda_items = attach_lines(agenda_items, topics)
 
     unscheduled = []
-    for item in plan["unscheduled"]:
-        talk = _flatten(item)   # item level: talk + breakdown + reason fields
-        why_line = attach_lines([talk], topics)[0]["why_line"]
+    loser_talks = (
+        attach_lines(
+            [_flatten(item) for item in plan["unscheduled"]], topics
+        )
+        if plan["unscheduled"] else []
+    )
+    for item, talk in zip(plan["unscheduled"], loser_talks):
+        why_line = talk["why_line"]
         alternative = (
             {k: v for k, v in item["alternative"].items() if k != "embedding"}
             if item.get("alternative") else None
