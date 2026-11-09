@@ -2,6 +2,8 @@
 batch-max normalization, new-speaker-neutrality, deterministic tie-breaks.
 """
 
+import pytest
+
 from scoring import compute_speaker_score, rank_candidates
 
 
@@ -17,7 +19,14 @@ def test_batch_max_normalization_makes_relevance_dominant():
     assert top["relevance_score"] / other["relevance_score"] == 2.0
     # both talks have zero-evidence speakers => identical speaker halves,
     # so the final-score gap is pure relevance: 0.75 * (1.0 - 0.5)
-    assert abs(top["final_score"] - other["final_score"]) - 0.375 < 1e-9
+    assert top["final_score"] - other["final_score"] == pytest.approx(0.375)
+
+
+def test_none_relevance_is_treated_as_zero():
+    ranked = rank_candidates(
+        [{"talk": {"id": "A", "start": "11:00"}, "relevance": None}]
+    )
+    assert ranked[0]["relevance_score"] == 0.0
 
 
 def test_new_speaker_scores_as_average_not_zero():
