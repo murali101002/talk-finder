@@ -36,26 +36,3 @@ uv run uvicorn main:app --reload
 
 Then open **http://localhost:8000** — pick interests, optionally tick
 accommodations, and show your agenda.
-
-## What the day looks like
-
-The pipeline runs in a fixed order, one stage per module, all speaks plain dicts:
-
-```mermaid
-flowchart LR
-    UI["static/index.html<br/>topics + accommodations<br/>3-group timeline"] <-->|/topics<br/>POST /agenda| AG["routers/agenda.py<br/>composition root"]
-
-    AG --> RT["retriever.py<br/>hybrid: BM25 + knn<br/>BM25-only fallback<br/>access filter"]
-    RT --> SC["scoring.py<br/>batch-normalized relevance<br/>+ speaker (shrinkage)"]
-    SC --> BD["builder.py<br/>fit-first walk<br/>full / clash verdicts"]
-    BD --> EX["explain.py<br/>template why-line floor<br/>optional sanitized LLM tier"]
-
-    RT --> ES[("Elasticsearch 9.5.5<br/>talks index")]
-    LS["load_seed.py<br/>embed batch + index"] --> ES
-    EX -.->|optional<br/>OPENAI_API_KEY| OA["OpenAI"]
-    AG --> RESP["AgendaResponse<br/>agenda · unscheduled · note"]
-
-    TEL["telemetry.py<br/>OTLP when configured"] -.->|gRPC :4317| D0["Dash0"]
-    MAIN["main.py: app wiring"] --> AG
-    MAIN --> TEL
-```
