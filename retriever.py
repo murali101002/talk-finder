@@ -71,6 +71,22 @@ def _meets_access(talk: dict, needs: set[str]) -> bool:
 ACCESS_TAGS = frozenset(_ACCESS_CHECKS)
 
 
+def count_meeting_needs(needs: set[str]) -> int:
+    """How many of today's talks satisfy every requested accommodation.
+
+    The corpus-level count the empty-result note needs: it separates "the
+    constraint can never be met today" from "these interests have no hits"
+    instead of letting the note blame topics for a filtering outcome.
+    """
+    ensure_index()
+    resp = client.search(index=INDEX, query={"match_all": {}}, size=1000)
+    return sum(
+        1
+        for hit in resp["hits"]["hits"]
+        if _meets_access(hit["_source"], needs)
+    )
+
+
 def search_talks() -> list[dict]:
     """All talks, sorted by start time then room (used by GET /talks)."""
     ensure_index()
@@ -110,8 +126,11 @@ def search_candidates(text: str, size: int = 20,
     """
     ensure_index()
     vector = embed_query(text)
-    ranked = _search_hybrid_with_embedding(text, size, vector) \
-        if vector is not None else _search_bm25_only(text, size)
+    # over-fetch when an access filter will run after ES cut to size: talks
+    # ranked just below the window may be exactly the accessible ones
+    fetch_size = max(size * 4, 50) if needs else size
+    ranked = _search_hybrid_with_embedding(text, fetch_size, vector) \
+        if vector is not None else _search_bm25_only(text, fetch_size)
     if needs:
         kept = [hit for hit in ranked if _meets_access(hit["talk"], needs)]
         logger.info(

@@ -1,3 +1,7 @@
 .env
 .DS_Store
 __pycache__/
+.hallmark/
+static/.hallmark/
+.ruff_cache/
+.pytest_cache/

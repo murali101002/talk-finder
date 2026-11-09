@@ -7,6 +7,7 @@ from functools import lru_cache
 from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 
 from routers import agenda, talks
 from telemetry import setup_otel
@@ -43,3 +44,4 @@ def health() -> dict:
 
 
 setup_otel(app)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

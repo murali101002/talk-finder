@@ -17,20 +17,24 @@ import retriever
 
 def _fake_client(hits: list, index_exists: bool = True):
     """Shape the ES search/indices surface exactly where retriever reads it."""
+    calls = SimpleNamespace(searches=[])
+    def fake_search(*args, **kwargs):
+        calls.searches.append(kwargs)
+        return {"hits": {"hits": hits}}
     return SimpleNamespace(
         indices=SimpleNamespace(exists=lambda index: index_exists),
-        search=lambda *a, **kw: {"hits": {"hits": hits}},
-    )
+        search=fake_search,
+    ), calls
 
 
 def test_search_talks_sorts_by_start_then_room(monkeypatch):
-    shuffled_hits = [
+    fake, _ = _fake_client(hits=[
         {"_source": {"id": "T03", "start": "12:00", "room": "Hall A"}},
         {"_source": {"id": "T02", "start": "11:00", "room": "Hall B"}},
         {"_source": {"id": "T04", "start": "11:00"}},
         {"_source": {"id": "T01", "start": "11:00", "room": "Hall A"}},
-    ]
-    monkeypatch.setattr(retriever, "client", _fake_client(shuffled_hits))
+    ])
+    monkeypatch.setattr(retriever, "client", fake)
     assert [talk["id"] for talk in retriever.search_talks()] == ["T04", "T01", "T02", "T03"]
 
 
@@ -40,8 +44,33 @@ def test_embed_query_is_none_without_api_key(monkeypatch):
 
 
 def test_ensure_index_is_503_when_index_missing(monkeypatch):
-    monkeypatch.setattr(retriever, "client", _fake_client(hits=[], index_exists=False))
+    fake, _ = _fake_client(hits=[], index_exists=False)
+    monkeypatch.setattr(retriever, "client", fake)
     with pytest.raises(HTTPException) as err:
         retriever.ensure_index()
     assert err.value.status_code == 503
     assert "load_seed.py" in err.value.detail
+
+
+def test_access_needs_overfetch_before_the_python_filter(monkeypatch):
+    """The ES window must be wider than the passed size whenever an
+    accessibility filter will run after it — ranked-out accessible talks
+    must still get checked."""
+    fake, calls = _fake_client(hits=[])
+    monkeypatch.setattr(retriever, "client", fake)
+    monkeypatch.setattr(retriever, "embed_query", lambda text: None)
+    retriever.search_candidates("kubernetes", size=20, needs={"captions"})
+    assert calls.searches[0]["size"] > 20
+    retriever.search_candidates("kubernetes", size=20)   # no needs: no change
+    assert calls.searches[1]["size"] == 20
+
+
+def test_count_meeting_needs_counts_the_whole_corpus(monkeypatch):
+    fake, _ = _fake_client(hits=[
+        {"_source": {"captions": True}},
+        {"_source": {"captions": False}},
+        {"_source": {"captions": True, "step_free": True}},
+    ])
+    monkeypatch.setattr(retriever, "client", fake)
+    assert retriever.count_meeting_needs({"captions"}) == 2
+    assert retriever.count_meeting_needs({"captions", "step_free"}) == 1

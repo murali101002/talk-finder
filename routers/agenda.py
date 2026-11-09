@@ -7,7 +7,8 @@ from fastapi import APIRouter, HTTPException
 from builder import build_plan, offer_alternatives
 from explain import attach_lines
 from models import AgendaRequest, AgendaResponse, UnscheduledItem
-from retriever import ACCESS_TAGS, distinct_topics, ensure_index, search_candidates
+from retriever import (ACCESS_TAGS, count_meeting_needs, distinct_topics,
+                       ensure_index, search_candidates)
 from scoring import rank_candidates
 
 logger = logging.getLogger("talkfinder.agenda")
@@ -50,6 +51,23 @@ def agenda(payload: AgendaRequest) -> dict:
     # silently assumed
     scored = search_candidates(", ".join(topics), needs=needs)
     if not scored:
+        # an empty result must name its cause: when an accessibility need
+        # emptied the answer, the note says so — never blame topics
+        if needs:
+            accessible = count_meeting_needs(needs)
+            if accessible == 0:
+                return AgendaResponse(
+                    topics=topics,
+                    note=f"No talk today satisfies {', '.join(sorted(needs))} "
+                         "— nothing was scheduled rather than pretending the "
+                         "constraint was applied.",
+                ).model_dump()
+            return AgendaResponse(
+                topics=topics,
+                note=f"{accessible} talk(s) satisfy your accessibility "
+                     "request, but none of them match these interests. "
+                     "Try broader topic words.",
+            ).model_dump()
         return AgendaResponse(topics=topics, note="No matching talks for these "
                            "interests. Try broader topic words.").model_dump()
 
