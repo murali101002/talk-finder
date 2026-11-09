@@ -326,6 +326,18 @@ function groups(response) {
     parts.push(`<div class="group"><div class="group__head"><h2>Full rooms</h2><span class="tab tab--full">${full.length} unavailable</span></div>
       <table class="table"><tbody>${rows.join("")}</tbody></table></div>`);
   }
+  const clashes = (response.unscheduled || []).filter(u => u.reason === "clash");
+  if (clashes.length) {
+    const rows = clashes.map(u => {
+      const winners = u.clashes_with.map(wid => byId.get(wid)).filter(Boolean);
+      const extra = winners.length
+        ? `<div class="remedy">Clashes with ${winners.map(w => `<span class="t-title">${esc(w.title)}</span> (${esc(w.start)} to ${esc(w.end)})`).join(", ")}.</div>`
+        : `<div class="remedy">Clashes with a confirmed pick.</div>`;
+      return tableRow(u.talk, u.why_line, extra);
+    });
+    parts.push(`<div class="group"><div class="group__head"><h2>Clashes</h2><span class="tab tab--clash">${clashes.length} unavailable</span></div>
+      <table class="table"><tbody>${rows.join("")}</tbody></table></div>`);
+  }
   const queued = [...watchLater].filter(id => registry.has(id));
   if (queued.length) {
     const rows = [];
